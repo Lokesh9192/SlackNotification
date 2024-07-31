@@ -23,39 +23,3 @@ def sendSlackNotification(String buildStatus = 'STARTED') {
   // Send notifications
   slackSend (color: colorCode, message: summary)
 }
-node {
-    try {
-        sendSlackNotification('STARTED')
-
-        stage('CheckoutCode'){
-    git 'https://github.com/Lokesh9192/Maven-WebApplication.git'
-}
-
-stage('Build'){
-    sh "${mavenHome}/bin/mvn clean package"
-}
-
-stage('Sonar'){
-  sh "${mavenHome}/bin/mvn sonar:sonar"  
-}
-
-stage('Nexus'){
-   sh "${mavenHome}/bin/mvn deploy" 
-}
-
-stage('Tomcat'){
-    sshagent(['6c2b49e1-cfaa-4dde-b6f2-48ca2d015e78']) {
-    sh "scp -o StrictHostKeyChecking=no target/maven-web-app.war ec2-user@54.196.135.119:/opt/apache-tomcat-10.1.26/webapps/"
-}
-}
-
-  } catch (e) {
-    // If there was an exception thrown, the build failed
-    currentBuild.result = "FAILED"
-    throw e
-  } finally {
-    // Success or failure, always send notifications
-    sendSlackNotification(currentBuild.result)
-  }
-}
-
